@@ -23,14 +23,14 @@ class User(db.Model, DatetimeMixin):
     @classmethod
     def get_logged_user(cls):
         user_id = get_jwt_identity()
-        user = db.query(cls).filter_by(id=user_id).first()
+        user = db.session.query(cls).filter_by(id=user_id).first()
         if not user:
             raise Unauthorized
         return user
 
     @classmethod
     def check_already_exist_user(cls, email, password):
-        if db.query(cls).filter_by(email=email, password=password).count():
+        if db.session.query(cls).filter_by(email=email, password=password).count():
             raise Forbidden
 
     @classmethod
@@ -44,7 +44,7 @@ class User(db.Model, DatetimeMixin):
 
     @classmethod
     def authenticate(cls, email, password):
-        user = db.query(cls).filter_by(email=email, password=password).first()
+        user = db.session.query(cls).filter_by(email=email, password=password).first()
         if not user:
             raise Unauthorized
         return user
