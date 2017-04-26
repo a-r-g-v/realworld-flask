@@ -1,4 +1,5 @@
-from sqlalchemy import Column, DateTime, Integer, Text, func, UniqueConstraint
+from sqlalchemy import Column, DateTime, Integer, Text, func, UniqueConstraint, ForeignKey
+from sqlalchemy.orm import relationship, backref
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import create_access_token, get_jwt_identity
 from .exceptions import Unauthorized, Forbidden
@@ -11,6 +12,26 @@ class DatetimeMixin(object):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 
+class Profile(db.Model, DatetimeMixin):
+    __tablename__ = 'profiles'
+    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True, autoincrement=False)
+    image = Column(Text)
+    bio = Column(Text)
+
+    def update(self, arg):
+        user = args['user']
+        self.__dict__.update(user)
+
+    @classmethod
+    def new(cls, user):
+        return cls(user_id=user.id)
+
+class Follow(db.Model, DatetimeMixin):
+    __tablename__ = 'follows'
+    followee_user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    follower_user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+
+
 class User(db.Model, DatetimeMixin):
     __tablename__ = 'users'
     __table_args__ = (UniqueConstraint(
@@ -19,6 +40,9 @@ class User(db.Model, DatetimeMixin):
     username = Column(Text, nullable=False)
     email = Column(Text, nullable=False)
     password = Column(Text, nullable=False)
+    follows = relationship("User", secondary="follows", primaryjoin=Follow.followee_user_id==id,
+            secondaryjoin=Follow.follower_user_id==id, backref="followers")
+    profile = relationship("Profile", uselist=False, backref=backref("user", uselist=False))
 
     @classmethod
     def get_logged_user(cls):
@@ -37,10 +61,14 @@ class User(db.Model, DatetimeMixin):
     def new(cls, args):
         user = args['user']
         cls.check_already_exist_user(user['email'], user['password'])
-        return cls(
+        user = cls(
             username=user['username'],
             email=user['email'],
             password=user['password'])
+
+        profile = Profile.new(user)
+        db.session.add(profile)
+        return user
 
     @classmethod
     def authenticate(cls, email, password):
@@ -55,11 +83,11 @@ class User(db.Model, DatetimeMixin):
 
     @property
     def bio(self):
-        return None
+        return self.profile.bio
 
     @property
     def image(self):
-        return None
+        return self.profile.image
 
     def _generate_jwt_token(self):
         return create_access_token(identity=self.id)
@@ -67,6 +95,7 @@ class User(db.Model, DatetimeMixin):
     def update(self, args):
         user = args['user']
         self.__dict__.update(user)
+        self.profile.update(user)
 
     def to_dict(self):
         return {
@@ -78,3 +107,10 @@ class User(db.Model, DatetimeMixin):
                 "image": self.image
             }
         }
+
+
+    def follow_user(self, user_id):
+        pass
+
+    def unfollow_user(self, user_id):
+        pass
