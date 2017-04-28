@@ -1,6 +1,7 @@
 from functools import wraps
 from flask import current_app
 from flask_jwt_extended.view_decorators import _decode_jwt_from_request
+from flask_jwt_extended.exceptions import JWTExtendedException
 
 try:
     from flask import _app_ctx_stack as ctx_stack
@@ -30,7 +31,7 @@ def jwt_optional(fn):
             jwt_data = _decode_jwt_from_request(request_type='access')
             if jwt_data:
                 ctx_stack.top.jwt = jwt_data
-        except:
+        except JWTExtendedException:
             pass
         return fn(*args, **kwargs)
     return decorator
