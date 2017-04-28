@@ -12,20 +12,6 @@ class DatetimeMixin(object):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
 
-class Profile(db.Model, DatetimeMixin):
-    __tablename__ = 'profiles'
-    user_id = Column(Integer, ForeignKey('users.id'), primary_key=True, autoincrement=False)
-    image = Column(Text)
-    bio = Column(Text)
-
-    def update(self, arg):
-        user = args['user']
-        self.__dict__.update(user)
-
-    @classmethod
-    def new(cls, user):
-        return cls(user_id=user.id)
-
 class Follow(db.Model, DatetimeMixin):
     __tablename__ = 'follows'
     followee_user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
@@ -40,9 +26,10 @@ class User(db.Model, DatetimeMixin):
     username = Column(Text, nullable=False)
     email = Column(Text, nullable=False)
     password = Column(Text, nullable=False)
+    image = Column(Text)
+    bio = Column(Text)
     follows = relationship("User", secondary="follows", primaryjoin=Follow.followee_user_id==id,
             secondaryjoin=Follow.follower_user_id==id, backref="followers")
-    profile = relationship("Profile", uselist=False, backref=backref("user", uselist=False))
 
     @classmethod
     def get_logged_user(cls):
@@ -66,8 +53,6 @@ class User(db.Model, DatetimeMixin):
             email=user['email'],
             password=user['password'])
 
-        profile = Profile.new(user)
-        db.session.add(profile)
         return user
 
     @classmethod
@@ -81,21 +66,12 @@ class User(db.Model, DatetimeMixin):
     def token(self):
         return self._generate_jwt_token()
 
-    @property
-    def bio(self):
-        return self.profile.bio
-
-    @property
-    def image(self):
-        return self.profile.image
-
     def _generate_jwt_token(self):
         return create_access_token(identity=self.id)
 
     def update(self, args):
         user = args['user']
         self.__dict__.update(user)
-        self.profile.update(user)
 
     def to_dict(self):
         return {
