@@ -7,6 +7,9 @@ from webargs.flaskparser import parser
 
 from app.models import User, db
 from . import api
+from .. import ma
+
+class UserSchema(ma.schema):
 
 
 class UsersView(FlaskView):
