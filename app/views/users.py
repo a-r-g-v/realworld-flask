@@ -6,16 +6,8 @@ from webargs.flaskparser import parser
 
 from app.models import User, db
 from . import api
-from .. import ma
+from .schemas import user_schema
 
-class _UserSchema(ma.ModelSchema):
-    class Meta:
-        model = User
-
-class UserSchema(ma.Schema):
-    user = fields.Nested(_UserSchema, only=["email", "token", "username", "bio", "image"])
-
-user_schema = UserSchema()
 
 
 class UsersView(FlaskView):

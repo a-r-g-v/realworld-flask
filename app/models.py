@@ -31,11 +31,21 @@ class User(db.Model, DatetimeMixin):
     follows = relationship("User", secondary="follows", primaryjoin=Follow.followee_user_id==id,
             secondaryjoin=Follow.follower_user_id==id, backref="followers")
 
+    # TODO: add comment
+    following = None
+
     @classmethod
-    def get_logged_user(cls):
+    def get_logged_user(cls, raise_exceptipn=True):
         user_id = get_jwt_identity()
+
+        if not user_id:
+            if raise_exceptipn:
+                raise Unauthorized
+            else:
+                return None
+
         user = db.session.query(cls).filter_by(id=user_id).first()
-        if not user:
+        if not user and raise_exceptipn:
             raise Unauthorized
         return user
 
@@ -73,9 +83,18 @@ class User(db.Model, DatetimeMixin):
         user = args['user']
         self.__dict__.update(user)
 
+    @classmethod
+    def find_by_username(cls, username):
+        return db.session.query(cls).filter_by(username=username).first_or_404()
 
-    def follow_user(self, user_id):
-        pass
+    def is_following_by(self, follower_user):
+        return db.session.query(Follow).filter_by(followee_user_id=self.id, follower_user_id=follower_user.id).count() != 0
+        
 
-    def unfollow_user(self, user_id):
-        pass
+    def follow(self, follow_user):
+        follow = Follow(followee_user_id=follow_user.id, follower_user_id=self.id)
+        db.session.add(follow)
+
+    def unfollow(self, followee_user):
+        follow = db.session.query(Follow).filter_by(followee_user_id=followee_user.id, follower_user_id=self.id).first_or_404()
+        db.session.delete(follow)
