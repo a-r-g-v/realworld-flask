@@ -31,7 +31,9 @@ class User(db.Model, DatetimeMixin):
     follows = relationship("User", secondary="follows", primaryjoin=Follow.followee_user_id==id,
             secondaryjoin=Follow.follower_user_id==id, backref="followers")
 
-    # TODO: add comment
+    # For display the `following` status in an instance of ProfileSchema, this is needed.
+    # If user is logged in, app.views.ProfilesView injects a boolean value into the `following`.
+    # Also, if the user is not logged in, the `following` cannot be acquired, so the default value is None.
     following = None
 
     @classmethod
