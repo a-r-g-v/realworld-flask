@@ -20,8 +20,8 @@ def create_app(config_filename):
     from .models import db
 
     db.init_app(app)
-    migrate.init_app(app, db)
     ma.init_app(app)
+    migrate.init_app(app, db)
 
     jwt.init_app(app)
 

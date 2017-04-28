@@ -73,17 +73,6 @@ class User(db.Model, DatetimeMixin):
         user = args['user']
         self.__dict__.update(user)
 
-    def to_dict(self):
-        return {
-            "user": {
-                "email": self.email,
-                "token": self.token,
-                "username": self.username,
-                "bio": self.bio,
-                "image": self.image
-            }
-        }
-
 
     def follow_user(self, user_id):
         pass

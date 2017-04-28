@@ -1,4 +1,3 @@
-from flask import jsonify
 from flask_jwt_extended import jwt_required
 from flask_classful import FlaskView, route
 
@@ -9,7 +8,14 @@ from app.models import User, db
 from . import api
 from .. import ma
 
-class UserSchema(ma.schema):
+class _UserSchema(ma.ModelSchema):
+    class Meta:
+        model = User
+
+class UserSchema(ma.Schema):
+    user = fields.Nested(_UserSchema, only=["email", "token", "username", "bio", "image"])
+
+user_schema = UserSchema()
 
 
 class UsersView(FlaskView):
@@ -31,7 +37,7 @@ class UsersView(FlaskView):
         """
         args = parser.parse(self.login_args).get('user')
         user = User.authenticate(args['email'], args['password'])
-        return jsonify(user.to_dict())
+        return user_schema.jsonify({'user': user})
 
     registration_args = {
         'user':
@@ -52,7 +58,7 @@ class UsersView(FlaskView):
         new_user = User.new(args)
         db.session.add(new_user)
         db.session.commit()
-        return jsonify(new_user.to_dict())
+        return user_schema.jsonify({'user': new_user})
 
 
 class UserView(FlaskView):
@@ -62,7 +68,7 @@ class UserView(FlaskView):
         """
             Get Current User
         """
-        return jsonify(User.get_logged_user().to_dict())
+        return user_schema.jsonify({'user': User.get_logged_user()})
 
     update_args = {
         'user':
@@ -86,7 +92,7 @@ class UserView(FlaskView):
         user.update(args)
         db.session.add(user)
         db.session.commit()
-        return jsonify(user.to_dict())
+        return user_schema.jsonify({'user': user})
 
 
 UsersView.register(api, trailing_slash=False)

@@ -7,7 +7,8 @@
 alembic==0.9.1            # via flask-migrate
 click==6.7                # via flask
 flask-classful==0.13.1
-flask-jwt-extended==1.4.1
+flask-jwt-extended==1.4.2
+flask-marshmallow==0.7.0
 flask-migrate==2.0.3
 flask-script==2.0.5       # via flask-migrate
 flask-sqlalchemy==2.2
@@ -16,10 +17,12 @@ itsdangerous==0.24        # via flask
 jinja2==2.9.6             # via flask
 mako==1.0.6               # via alembic
 markupsafe==1.0           # via jinja2, mako
-marshmallow==2.13.5       # via webargs
+marshmallow-sqlalchemy==0.13.1
+marshmallow==2.13.5       # via flask-marshmallow, marshmallow-sqlalchemy, webargs
 pyjwt==1.5.0              # via flask-jwt-extended
 python-editor==1.0.3      # via alembic
 simplekv==0.10.0          # via flask-jwt-extended
-sqlalchemy==1.1.9         # via alembic, flask-sqlalchemy
+six==1.10.0               # via flask-marshmallow
+sqlalchemy==1.1.9         # via alembic, flask-sqlalchemy, marshmallow-sqlalchemy
 webargs==1.6.0
 werkzeug==0.12.1          # via flask
