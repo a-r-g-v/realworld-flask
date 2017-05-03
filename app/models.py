@@ -14,8 +14,10 @@ class DatetimeMixin(object):
 
 class Follow(db.Model, DatetimeMixin):
     __tablename__ = 'follows'
-    followee_user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
-    follower_user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    followee_user_id = Column(
+        Integer, ForeignKey("users.id"), primary_key=True)
+    follower_user_id = Column(
+        Integer, ForeignKey("users.id"), primary_key=True)
 
 
 class User(db.Model, DatetimeMixin):
@@ -28,13 +30,12 @@ class User(db.Model, DatetimeMixin):
     password = Column(Text, nullable=False)
     image = Column(Text)
     bio = Column(Text)
-    follows = relationship("User", secondary="follows", primaryjoin=Follow.followee_user_id==id,
-            secondaryjoin=Follow.follower_user_id==id, backref="followers")
-
-    # For display the `following` status in an instance of ProfileSchema, this is needed.
-    # If user is logged in, app.views.ProfilesView injects a boolean value into the `following`.
-    # Also, if the user is not logged in, the `following` cannot be acquired, so the default value is None.
-    following = None
+    follows = relationship(
+        "User",
+        secondary="follows",
+        primaryjoin=Follow.followee_user_id == id,
+        secondaryjoin=Follow.follower_user_id == id,
+        backref="followers")
 
     @classmethod
     def get_logged_user(cls, raise_exceptipn=True):
@@ -53,7 +54,8 @@ class User(db.Model, DatetimeMixin):
 
     @classmethod
     def check_already_exist_user(cls, email, password):
-        if db.session.query(cls).filter_by(email=email, password=password).count():
+        if db.session.query(cls).filter_by(
+                email=email, password=password).count():
             raise Forbidden
 
     @classmethod
@@ -69,7 +71,8 @@ class User(db.Model, DatetimeMixin):
 
     @classmethod
     def authenticate(cls, email, password):
-        user = db.session.query(cls).filter_by(email=email, password=password).first()
+        user = db.session.query(cls).filter_by(
+            email=email, password=password).first()
         if not user:
             raise Unauthorized
         return user
@@ -87,16 +90,21 @@ class User(db.Model, DatetimeMixin):
 
     @classmethod
     def find_by_username(cls, username):
-        return db.session.query(cls).filter_by(username=username).first_or_404()
+        return db.session.query(cls).filter_by(
+            username=username).first_or_404()
 
     def is_following_by(self, follower_user):
-        return db.session.query(Follow).filter_by(followee_user_id=self.id, follower_user_id=follower_user.id).count() != 0
-        
+        return db.session.query(Follow).filter_by(
+            followee_user_id=self.id,
+            follower_user_id=follower_user.id).count() != 0
 
     def follow(self, follow_user):
-        follow = Follow(followee_user_id=follow_user.id, follower_user_id=self.id)
+        follow = Follow(
+            followee_user_id=follow_user.id, follower_user_id=self.id)
         db.session.add(follow)
 
     def unfollow(self, followee_user):
-        follow = db.session.query(Follow).filter_by(followee_user_id=followee_user.id, follower_user_id=self.id).first_or_404()
+        follow = db.session.query(Follow).filter_by(
+            followee_user_id=followee_user.id,
+            follower_user_id=self.id).first_or_404()
         db.session.delete(follow)

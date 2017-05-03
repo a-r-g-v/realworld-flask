@@ -5,7 +5,6 @@ from flask_jwt_extended import JWTManager
 from flask_marshmallow import Marshmallow
 from app.errors import Errors
 
-
 migrate = Migrate()
 jwt = JWTManager()
 errors = Errors()
@@ -15,7 +14,6 @@ ma = Marshmallow()
 def create_app(config_filename):
     app = Flask(__name__)
     app.config.from_pyfile(config_filename)
-    
 
     from .models import db
 

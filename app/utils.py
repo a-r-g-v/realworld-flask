@@ -34,5 +34,5 @@ def jwt_optional(fn):
         except JWTExtendedException:
             pass
         return fn(*args, **kwargs)
-    return decorator
 
+    return decorator
