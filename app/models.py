@@ -11,6 +11,26 @@ class DatetimeMixin(object):
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
+class Tag(db.Model):
+    __tablename__ = 'tags'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(Text, nullable=False)
+    articles = relationship('ArticleTag', backref='tag')
+
+class ArticleTag(db.Model):
+    __tablename__ = 'article_tags'
+    article_id = Column(Integer, ForeignKey("articles.id"), primary_key=True)
+    tag_id = Column(Integer, ForeignKey("tags.id"), primary_key=True)
+
+class Article(db.Model, DatetimeMixin):
+    __tablename__ = 'articles'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    description = Column(Text, nullable=False)
+    slug = Column(Text, nullable=False)
+    title = Column(Text, nullable=False)
+    author_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    tags = relationship('ArticleTag', backref='article')
+
 
 class Follow(db.Model, DatetimeMixin):
     __tablename__ = 'follows'
@@ -36,6 +56,8 @@ class User(db.Model, DatetimeMixin):
         primaryjoin=Follow.followee_user_id == id,
         secondaryjoin=Follow.follower_user_id == id,
         backref="followers")
+
+    articles = relationship("Article", backref=backref("author", uselist=False))
 
     @classmethod
     def get_logged_user(cls, raise_exceptipn=True):
