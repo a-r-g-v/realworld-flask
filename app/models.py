@@ -64,7 +64,10 @@ class Article(db.Model, DatetimeMixin):
 
     @classmethod
     def new(cls, article, user):
-        return cls(title=article['title'], description=article['description'], body=article['body'], author_user_id=user.id, slug=cls.create_slug_from_title(article['title']))
+        new_article = cls(title=article['title'], description=article['description'], body=article['body'], author_user_id=user.id, slug=cls.create_slug_from_title(article['title']))
+        if 'tagList' in article:
+            new_article.add_tags(article['tagList'])
+        return new_article
 
     def add_tags(self, tag_list):
         for tag_name in tag_list:

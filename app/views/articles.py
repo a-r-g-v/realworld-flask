@@ -52,12 +52,6 @@ class ArticlesView(FlaskView):
         user = User.get_logged_user()
         new_article = user.create_article(args['article'])
         db.session.add(new_article)
-        db.session.flush()
-
-        if 'tagList' in args['article']:
-            new_article.add_tags(args)
-            db.session.add(new_article)
-
         db.session.commit()
         return article_schema.jsonify({'article': new_article})
 
