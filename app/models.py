@@ -115,6 +115,12 @@ class Article(db.Model, DatetimeMixin):
     def is_favorited_by(self, user):
         return db.session.query(Favorite).filter_by(article_id=self.id, user_id=user.id).count() != 0
 
+    def update(self, args):
+        user = args['article']
+        self.__dict__.update(user)
+
+
+
 
 
 
