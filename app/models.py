@@ -267,3 +267,11 @@ class User(db.Model, DatetimeMixin):
         except ValueError:
             # When user do not favorite article.
             pass
+
+    def feed_article(self, limit=20, offset=0):
+        return db.session.query(Article).\
+                join(Follow, Article.author_user_id == Follow.follower_user_id).\
+                join(User, User.id == Follow.followee_user_id ).\
+                filter(User.id==self.id).\
+                order_by(desc(Article.created_at)).\
+                offset(offset).limit(limit).all()

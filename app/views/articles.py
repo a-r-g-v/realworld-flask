@@ -29,13 +29,19 @@ class ArticlesView(FlaskView):
         articles = Article.recent(**args)
         return articles_schema.jsonify({'articles': articles})
 
+    feed_article_args = {
+                'limit': fields.Integer(),
+                'offset': fields.Integer()
+    }
 
     @jwt_required
     def feed(self):
         """
             Feed Articles
         """
-        articles = Article.feed()
+        args = parser.parse(self.feed_article_args)
+        logged_user = User.get_logged_user()
+        articles = logged_user.feed_article(**args)
         return articles_schema.jsonify({'articles': articles})
 
     @jwt_optional
