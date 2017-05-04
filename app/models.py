@@ -1,15 +1,143 @@
-from sqlalchemy import Column, DateTime, Integer, Text, func, UniqueConstraint, ForeignKey
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy import Column, DateTime, Integer, Text, func, UniqueConstraint, ForeignKey, desc
+from sqlalchemy.orm import relationship, backref, aliased
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import create_access_token, get_jwt_identity
 from .exceptions import Unauthorized, Forbidden
 
 db = SQLAlchemy()
 
-
 class DatetimeMixin(object):
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
+class Comment(db.Model, DatetimeMixin):
+    __tablename__ = 'comments'
+    no = Column(Integer, primary_key=True, autoincrement=True)
+    article_id =  Column(Integer, ForeignKey('articles.id'), nullable=False)
+    body = Column(Text, nullable=False)
+    author_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+
+    def delete(self):
+        db.session.delete(self)
+
+    @classmethod
+    def new(cls, article, comment, author):
+        return cls(article_id=article.id, body=comment['body'], author_user_id=author.id)
+    
+    @classmethod
+    def all(cls):
+        return db.session.query(cls).all()
+
+
+class Tag(db.Model):
+    __tablename__ = 'tags'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    name = Column(Text, nullable=False)
+
+    @classmethod
+    def get_or_create(cls, tag_name):
+        tag = db.session.query(cls).filter_by(name=tag_name).first()
+        if tag:
+            return tag
+
+        new_tag = cls(name=tag_name)
+        return new_tag
+
+    @classmethod
+    def all(cls):
+        return db.session.query(cls).all()
+
+class Favorite(db.Model, DatetimeMixin):
+    __tablename__ = 'favorites'
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    article_id = Column(Integer, ForeignKey("articles.id"), primary_key=True)
+
+class ArticleTag(db.Model, DatetimeMixin):
+    __tablename__ = 'article_tags'
+    article_id = Column(Integer, ForeignKey("articles.id"), primary_key=True)
+    tag_id = Column(Integer, ForeignKey("tags.id"), primary_key=True)
+
+class Article(db.Model, DatetimeMixin):
+    __tablename__ = 'articles'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    description = Column(Text, nullable=False)
+    body = Column(Text, nullable=False)
+    slug = Column(Text, nullable=False, unique=True)
+    title = Column(Text, nullable=False)
+    author_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    comments = relationship('Comment', backref='article')
+    tags = relationship(
+            'Tag', 
+            secondary="article_tags",
+            primaryjoin= ArticleTag.article_id  == id,
+            secondaryjoin=ArticleTag.tag_id == Tag.id,
+            backref='article')
+
+    @staticmethod
+    def create_slug_from_title(title):
+        return title.replace(' ', '-')
+
+    @classmethod
+    def recent(cls, limit=20, offset=0, tag=None, author=None, favorited=None):
+        query = db.session.query(cls)
+
+        if tag:
+            tags = aliased(Tag)
+            query = query.join(tags, cls.tags).filter(tags.name==tag)
+
+        if author:
+            authors = aliased(User)
+            query = query.join(authors, cls.author).filter(authors.username==author)
+
+        if favorited:
+            favorites = aliased(User)
+            query = query.join(Favorite, Favorite.article_id == cls.id).\
+                    join(favorites, Favorite.user_id == favorites.id ).\
+                    filter(favorites.username==favorited)
+    
+        return query.order_by(desc(cls.created_at)).offset(offset).limit(limit).all()
+
+    @classmethod
+    def feed(cls, user, limit=20, offset=0):
+        return []
+
+    @classmethod
+    def find_by_slug(cls, article_slug):
+        return db.session.query(cls).filter_by(slug=article_slug).first_or_404()
+
+    @classmethod
+    def new(cls, article, user):
+        new_article = cls(title=article['title'], description=article['description'], body=article['body'], author_user_id=user.id, slug=cls.create_slug_from_title(article['title']))
+        if 'tagList' in article:
+            new_article.add_tags(article['tagList'])
+        return new_article
+
+    def add_tags(self, tag_list):
+        for tag_name in tag_list:
+          self.tags.append(Tag.get_or_create(tag_name))
+
+    @property
+    def tagList(self):
+        return [tag.name for tag in self.tags]
+
+    @property
+    def favoritesCount(self):
+        return len(self.favorited_users)
+
+
+    def delete(self):
+        db.session.delete(self)
+
+    def is_favorited_by(self, user):
+        return db.session.query(Favorite).filter_by(article_id=self.id, user_id=user.id).count() != 0
+
+    def update(self, args):
+        user = args['article']
+        self.__dict__.update(user)
+
+
+
+
 
 
 class Follow(db.Model, DatetimeMixin):
@@ -36,6 +164,16 @@ class User(db.Model, DatetimeMixin):
         primaryjoin=Follow.followee_user_id == id,
         secondaryjoin=Follow.follower_user_id == id,
         backref="followers")
+
+    favorites = relationship(
+            "Article",
+            secondary="favorites",
+            primaryjoin=Favorite.user_id == id,
+            secondaryjoin=Favorite.article_id == Article.id,
+            backref="favorited_users")
+
+    articles = relationship("Article", backref=backref("author", uselist=False))
+    comments = relationship("Comment", backref=backref("author", uselist=False))
 
     @classmethod
     def get_logged_user(cls, raise_exceptipn=True):
@@ -99,12 +237,41 @@ class User(db.Model, DatetimeMixin):
             follower_user_id=follower_user.id).count() != 0
 
     def follow(self, follow_user):
-        follow = Follow(
-            followee_user_id=follow_user.id, follower_user_id=self.id)
-        db.session.add(follow)
+        self.follows.append(follow_user)
 
     def unfollow(self, followee_user):
-        follow = db.session.query(Follow).filter_by(
-            followee_user_id=followee_user.id,
-            follower_user_id=self.id).first_or_404()
-        db.session.delete(follow)
+        try:
+            self.follows.remove(followee_user)
+        except ValueError:
+            # When followee_user do not follow follower_user.
+            pass
+
+    def create_article(self, article):
+        return Article.new(article, self)
+
+    def create_comment(self, article, comment):
+        return Comment.new(article, comment, self)
+
+    def find_my_article_by_slug(self, slug):
+        return db.session.query(Article).filter_by(slug=slug, author_user_id=self.id).first_or_404()
+
+    def find_my_comment_by_id(self, comment_id):
+        return db.session.query(Comment).filter_by(id=comment_id, author_user_id=self.id).first_or_404()
+
+    def favorite_article(self, article):
+        self.favorites.append(article)
+
+    def unfavorite_article(self, article):
+        try:
+            self.favorites.remove(article)
+        except ValueError:
+            # When user do not favorite article.
+            pass
+
+    def feed_article(self, limit=20, offset=0):
+        return db.session.query(Article).\
+                join(Follow, Article.author_user_id == Follow.follower_user_id).\
+                join(User, User.id == Follow.followee_user_id ).\
+                filter(User.id==self.id).\
+                order_by(desc(Article.created_at)).\
+                offset(offset).limit(limit).all()
