@@ -10,6 +10,25 @@ class DatetimeMixin(object):
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
+class Comment(db.Model):
+    __tablename__ = 'comments'
+    article_id =  Column(Integer, ForeignKey('articles.id'), primary_key=True)
+    no = Column(Integer, primary_key=True, autoincrement=True)
+    body = Column(Text, nullable=False)
+    author_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+
+    def delete(self):
+        db.session.delete(self)
+
+    @classmethod
+    def new(cls, article, comment, author):
+        return cls(article_id=article.id, body=comment['body'], author_user_id=author.id)
+    
+    @classmethod
+    def all(cls):
+        return db.session.query(cls).all()
+
+
 class Tag(db.Model):
     __tablename__ = 'tags'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -46,6 +65,7 @@ class Article(db.Model, DatetimeMixin):
     slug = Column(Text, nullable=False, unique=True)
     title = Column(Text, nullable=False)
     author_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
+    comments = relationship('Comment', backref='article')
     tags = relationship(
             'Tag', 
             secondary="article_tags",
@@ -131,6 +151,7 @@ class User(db.Model, DatetimeMixin):
             backref="favorited_users")
 
     articles = relationship("Article", backref=backref("author", uselist=False))
+    comments = relationship("Comment", backref=backref("author", uselist=False))
 
     @classmethod
     def get_logged_user(cls, raise_exceptipn=True):
@@ -206,8 +227,14 @@ class User(db.Model, DatetimeMixin):
     def create_article(self, article):
         return Article.new(article, self)
 
+    def create_comment(self, article, comment):
+        return Comment.new(article, comment, self)
+
     def find_my_article_by_slug(self, slug):
         return db.session.query(Article).filter_by(slug=slug, author_user_id=self.id).first_or_404()
+
+    def find_my_comment_by_id(self, comment_id):
+        return db.session.query(Comment).filter_by(id=comment_id, author_user_id=self.id).first_or_404()
 
     def favorite_article(self, article):
         self.favorites.append(article)

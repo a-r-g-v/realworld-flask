@@ -2,6 +2,7 @@ from .. import ma
 from app.models import User, Article
 from marshmallow import fields, pre_dump
 
+
 class _UserSchema(ma.Schema):
     email = fields.Email()
     token = fields.String()
@@ -21,8 +22,8 @@ class _ArticleSchema(ma.Schema):
     title = fields.String()
     description = fields.String()
     body = fields.String()
-    createdAt = fields.DateTime()
-    updatedAt = fields.DateTime()
+    createdAt = fields.DateTime(attribute='created_at')
+    updatedAt = fields.DateTime(attribute='updated_at')
     favorited = fields.Boolean()
     favoritesCount = fields.Integer()
     tagList = fields.List(fields.String())
@@ -41,12 +42,22 @@ class ArticlesSchema(ma.Schema):
             data['articlesCount'] = len(data['articles'])
         return data
 
-
-
-
 class TagsSchema(ma.Schema):
     tags = fields.List(fields.String())
 
+class _CommentSchema(ma.Schema):
+    id = fields.Integer()
+    body = fields.String()
+    createdAt = fields.DateTime(attribute='created_at')
+    updatedAt = fields.DateTime(attribute='updated_at')
+    author = fields.Nested(_UserSchema, only=["username", "bio", "image", "following"])
+
+
+class CommentSchema(ma.Schema):
+    comment = fields.Nested(_CommentSchema)
+
+class CommentsSchema(ma.Schema):
+    comments = fields.Nested(_CommentSchema, many=True)
 
 
 
@@ -55,3 +66,5 @@ profile_schema = ProfileSchema()
 article_schema = ArticleSchema()
 articles_schema = ArticlesSchema()
 tags_schema = TagsSchema()
+comment_schema = CommentSchema()
+comments_schema = CommentsSchema()

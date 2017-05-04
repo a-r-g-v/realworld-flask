@@ -7,10 +7,11 @@ from webargs.flaskparser import parser
 
 from app.models import Article, db, User
 from . import api
-from .schemas import article_schema, articles_schema
+from .schemas import article_schema, articles_schema, comment_schema, comments_schema
 from app.utils import jwt_optional
 
 class ArticlesView(FlaskView):
+    @jwt_optional
     def index(self):
         """
             List Articles
@@ -19,6 +20,7 @@ class ArticlesView(FlaskView):
         return articles_schema.jsonify({'articles': articles})
 
 
+    @jwt_required
     def feed(self):
         """
             Feed Articles
@@ -113,12 +115,34 @@ class ArticlesView(FlaskView):
         return self.get(slug)
 
 
+    post_comment_args = {
+        'comment':
+        fields.Nested(
+            {
+                'body': fields.Str(required=True)
+            },
+            required=True)
+    }
     @route('<slug>/comments', methods=['GET', 'POST'])
+    @jwt_optional
     def get_and_post_comment(self, slug):
         """
             Get Comments from an Article And Add Comments to an Article
         """
-        pass
+        if request.method == 'GET':
+            comments = Comment.all()
+            return comment_schema.jsonify({'comments': comments})
+
+        elif request.method == 'POST':
+            args = parser.parse(self.post_comment_args)
+            logged_user = User.get_logged_user()
+            article = Article.find_by_slug(slug)
+            comment = logged_user.create_comment(article, args['comment'])
+            db.session.add(comment)
+            db.session.commit()
+
+            return comment_schema.jsonify({'comment': comment})
+
     
     @route('<slug>/comments/<id>', methods=['DELETE'])
     @jwt_required
@@ -126,6 +150,11 @@ class ArticlesView(FlaskView):
         """
             Delete Comment
         """
-        pass
+        logged_user = User.get_logged_user()
+        comment = logged_user.find_my_comment_by_id(comment_id)
+        comment.delete()
+        db.session.commit()
+        return '', 200
+
 
 ArticlesView.register(api, trailing_slash=False)
