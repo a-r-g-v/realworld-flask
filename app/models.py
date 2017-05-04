@@ -6,7 +6,6 @@ from .exceptions import Unauthorized, Forbidden
 
 db = SQLAlchemy()
 
-
 class DatetimeMixin(object):
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
@@ -25,6 +24,10 @@ class Tag(db.Model):
         new_tag = cls(name=tag_name)
         return new_tag
 
+class Favorite(db.Model, DatetimeMixin):
+    __tablename__ = 'favorites'
+    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    article_id = Column(Integer, ForeignKey("articles.id"), primary_key=True)
 
 class ArticleTag(db.Model, DatetimeMixin):
     __tablename__ = 'article_tags'
@@ -36,7 +39,7 @@ class Article(db.Model, DatetimeMixin):
     id = Column(Integer, primary_key=True, autoincrement=True)
     description = Column(Text, nullable=False)
     body = Column(Text, nullable=False)
-    slug = Column(Text, nullable=False)
+    slug = Column(Text, nullable=False, unique=True)
     title = Column(Text, nullable=False)
     author_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     tags = relationship(
@@ -77,8 +80,17 @@ class Article(db.Model, DatetimeMixin):
     def tagList(self):
         return [tag.name for tag in self.tags]
 
+    @property
+    def favoritesCount(self):
+        return len(self.favorited_users)
+
+
     def delete(self):
         db.session.delete(self)
+
+    def is_favorited_by(self, user):
+        return db.session.query(Favorite).filter_by(article_id=self.id, user_id=user.id).count() != 0
+
 
 
 
@@ -106,6 +118,13 @@ class User(db.Model, DatetimeMixin):
         primaryjoin=Follow.followee_user_id == id,
         secondaryjoin=Follow.follower_user_id == id,
         backref="followers")
+
+    favorites = relationship(
+            "Article",
+            secondary="favorites",
+            primaryjoin=Favorite.user_id == id,
+            secondaryjoin=Favorite.article_id == Article.id,
+            backref="favorited_users")
 
     articles = relationship("Article", backref=backref("author", uselist=False))
 
@@ -171,18 +190,27 @@ class User(db.Model, DatetimeMixin):
             follower_user_id=follower_user.id).count() != 0
 
     def follow(self, follow_user):
-        follow = Follow(
-            followee_user_id=follow_user.id, follower_user_id=self.id)
-        db.session.add(follow)
+        self.follows.append(follow_user)
 
     def unfollow(self, followee_user):
-        follow = db.session.query(Follow).filter_by(
-            followee_user_id=followee_user.id,
-            follower_user_id=self.id).first_or_404()
-        db.session.delete(follow)
+        try:
+            self.follows.remove(followee_user)
+        except ValueError:
+            # When followee_user do not follow follower_user.
+            pass
 
     def create_article(self, article):
         return Article.new(article, self)
 
     def find_my_article_by_slug(self, slug):
         return db.session.query(Article).filter_by(slug=slug, author_user_id=self.id).first_or_404()
+
+    def favorite_article(self, article):
+        self.favorites.append(article)
+
+    def unfavorite_article(self, article):
+        try:
+            self.favorites.remove(article)
+        except ValueError:
+            # When user do not favorite article.
+            pass

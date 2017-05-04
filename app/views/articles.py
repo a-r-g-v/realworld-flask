@@ -1,3 +1,4 @@
+from flask import request
 from flask_jwt_extended import jwt_required
 from flask_classful import FlaskView, route
 
@@ -7,6 +8,7 @@ from webargs.flaskparser import parser
 from app.models import Article, db, User
 from . import api
 from .schemas import article_schema, articles_schema
+from app.utils import jwt_optional
 
 class ArticlesView(FlaskView):
     def index(self):
@@ -24,11 +26,15 @@ class ArticlesView(FlaskView):
         articles = Article.feed()
         return articles_schema.jsonify({'articles': articles})
 
+    @jwt_optional
     def get(self, slug):
         """
             Get Article
         """
-        article = Article.find_by_slug(article_slug)
+        article = Article.find_by_slug(slug)
+        logged_user = User.get_logged_user(raise_exceptipn=False)
+        if logged_user:
+            article.favorited = article.is_favorited_by(logged_user)
         return article_schema.jsonify({'article': article})
 
     create_article_args = {
@@ -95,7 +101,17 @@ class ArticlesView(FlaskView):
         """
             Favorite And Unfavorite Article
         """
-        pass
+        article = Article.find_by_slug(slug)
+        logged_user = User.get_logged_user()
+        if request.method == 'POST':
+            logged_user.favorite_article(article)
+
+        elif request.method == 'DELETE':
+            logged_user.unfavorite_article(article)
+
+        db.session.commit()
+        return self.get(slug)
+
 
     @route('<slug>/comments', methods=['GET', 'POST'])
     def get_and_post_comment(self, slug):

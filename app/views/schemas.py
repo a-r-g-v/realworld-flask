@@ -1,6 +1,6 @@
 from .. import ma
 from app.models import User, Article
-from marshmallow import fields
+from marshmallow import fields, pre_dump
 
 class _UserSchema(ma.Schema):
     email = fields.Email()
@@ -33,7 +33,16 @@ class ArticleSchema(ma.Schema):
 
 class ArticlesSchema(ma.Schema):
     articles = fields.Nested(_ArticleSchema, many=True)
-    articlesCount = fields.Function(lambda obj: len(obj.articles))
+    articlesCount =  fields.Integer()
+
+    @pre_dump(pass_many=False)
+    def calucate_count(self, data):
+        if 'articlesCount' not in data:
+            data['articlesCount'] = len(data['articles'])
+        return data
+
+
+
 
 class TagsSchema(ma.Schema):
     tags = fields.String(many=True)
