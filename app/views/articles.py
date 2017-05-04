@@ -11,12 +11,22 @@ from .schemas import article_schema, articles_schema, comment_schema, comments_s
 from app.utils import jwt_optional
 
 class ArticlesView(FlaskView):
+
+    index_article_args = {
+                'tag': fields.Str(),
+                'author': fields.Str(),
+                'favorited': fields.Str(),
+                'limit': fields.Integer(),
+                'offset': fields.Integer()
+    }
+
     @jwt_optional
     def index(self):
         """
             List Articles
         """
-        articles = Article.recent()
+        args = parser.parse(self.index_article_args)
+        articles = Article.recent(**args)
         return articles_schema.jsonify({'articles': articles})
 
 

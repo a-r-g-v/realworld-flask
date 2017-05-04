@@ -1,5 +1,5 @@
 from sqlalchemy import Column, DateTime, Integer, Text, func, UniqueConstraint, ForeignKey, desc
-from sqlalchemy.orm import relationship, backref
+from sqlalchemy.orm import relationship, backref, aliased
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import create_access_token, get_jwt_identity
 from .exceptions import Unauthorized, Forbidden
@@ -78,8 +78,24 @@ class Article(db.Model, DatetimeMixin):
         return title.replace(' ', '-')
 
     @classmethod
-    def recent(cls, limit=20, offset=0):
-        return db.session.query(cls).order_by(desc(cls.created_at)).offset(offset).limit(limit).all()
+    def recent(cls, limit=20, offset=0, tag=None, author=None, favorited=None):
+        query = db.session.query(cls)
+
+        if tag:
+            tags = aliased(Tag)
+            query = query.join(tags, cls.tags).filter(tags.name==tag)
+
+        if author:
+            authors = aliased(User)
+            query = query.join(authors, cls.author).filter(authors.username==author)
+
+        if favorited:
+            favorites = aliased(User)
+            query = query.join(Favorite, Favorite.article_id == cls.id).\
+                    join(favorites, Favorite.user_id == favorites.id ).\
+                    filter(favorites.username==favorited)
+    
+        return query.order_by(desc(cls.created_at)).offset(offset).limit(limit).all()
 
     @classmethod
     def feed(cls, user, limit=20, offset=0):
