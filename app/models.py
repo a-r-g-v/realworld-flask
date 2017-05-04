@@ -15,7 +15,6 @@ class Tag(db.Model):
     __tablename__ = 'tags'
     id = Column(Integer, primary_key=True, autoincrement=True)
     name = Column(Text, nullable=False)
-    articles = relationship('ArticleTag', backref='tag')
 
     @classmethod
     def get_or_create(cls, tag_name):
@@ -24,11 +23,10 @@ class Tag(db.Model):
             return tag
 
         new_tag = cls(name=tag_name)
-        db.session.add(new_tag)
         return new_tag
 
 
-class ArticleTag(db.Model):
+class ArticleTag(db.Model, DatetimeMixin):
     __tablename__ = 'article_tags'
     article_id = Column(Integer, ForeignKey("articles.id"), primary_key=True)
     tag_id = Column(Integer, ForeignKey("tags.id"), primary_key=True)
@@ -37,10 +35,16 @@ class Article(db.Model, DatetimeMixin):
     __tablename__ = 'articles'
     id = Column(Integer, primary_key=True, autoincrement=True)
     description = Column(Text, nullable=False)
+    body = Column(Text, nullable=False)
     slug = Column(Text, nullable=False)
     title = Column(Text, nullable=False)
     author_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    tags = relationship('ArticleTag', backref='article')
+    tags = relationship(
+            'Tag', 
+            secondary="article_tags",
+            primaryjoin= ArticleTag.article_id  == id,
+            secondaryjoin=ArticleTag.tag_id == Tag.id,
+            backref='article')
 
     @staticmethod
     def create_slug_from_title(title):
@@ -60,14 +64,15 @@ class Article(db.Model, DatetimeMixin):
 
     @classmethod
     def new(cls, article, user):
-        new_article = cls(title=article['title'], description=article['description'], body=article['body'], author_user_id=user.id, slug=cls.create_slug_from_title(article['body']))
-        if 'tagList' in article and len(article['tagList']) > 0:
-            tags = [ Tag.get_or_create(tag_name) for tag_name in article['tagList'] ]
-            new_article.add_tags(tags)
-        return new_article
+        return cls(title=article['title'], description=article['description'], body=article['body'], author_user_id=user.id, slug=cls.create_slug_from_title(article['title']))
 
-    def add_tags(self, tags):
-        db.session.add_all([ArticleTag.new(self, tag) for tag in tags])
+    def add_tags(self, tag_list):
+        for tag_name in tag_list:
+          self.tags.append(Tag.get_or_create(tag_name))
+
+    @property
+    def tagList(self):
+        return [tag.name for tag in self.tags]
 
     def delete(self):
         db.session.delete(self)

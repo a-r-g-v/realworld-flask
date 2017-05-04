@@ -25,6 +25,7 @@ class _ArticleSchema(ma.Schema):
     updatedAt = fields.DateTime()
     favorited = fields.Boolean()
     favoritesCount = fields.Integer()
+    tagList = fields.List(fields.String())
     author = fields.Nested(_UserSchema, only=["username", "bio", "image", "following"])
 
 class ArticleSchema(ma.Schema):

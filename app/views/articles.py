@@ -4,7 +4,7 @@ from flask_classful import FlaskView, route
 from webargs import fields
 from webargs.flaskparser import parser
 
-from app.models import Article, db
+from app.models import Article, db, User
 from . import api
 from .schemas import article_schema, articles_schema
 
@@ -14,7 +14,7 @@ class ArticlesView(FlaskView):
             List Articles
         """
         articles = Article.recent()
-        return articles_schema.jsonify(articles)
+        return articles_schema.jsonify({'articles': articles})
 
 
     def feed(self):
@@ -38,7 +38,7 @@ class ArticlesView(FlaskView):
                 'title': fields.Str(required=True),
                 'description': fields.Str(required=True),
                 'body': fields.Str(required=True),
-                'tagList': fields.Str(many=True)
+                'tagList': fields.List(fields.Str())
             },
             required=True)
     }
@@ -52,6 +52,12 @@ class ArticlesView(FlaskView):
         user = User.get_logged_user()
         new_article = user.create_article(args['article'])
         db.session.add(new_article)
+        db.session.flush()
+
+        if 'tagList' in args['article']:
+            new_article.add_tags(args)
+            db.session.add(new_article)
+
         db.session.commit()
         return article_schema.jsonify({'article': new_article})
 
