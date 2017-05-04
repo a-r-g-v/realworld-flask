@@ -16,7 +16,7 @@ class UserSchema(ma.Schema):
 class ProfileSchema(ma.Schema):
     profile = fields.Nested(_UserSchema, only=["username", "bio", "image", "following"])
 
-class ArticleSchema(ma.Schema):
+class _ArticleSchema(ma.Schema):
     slug = fields.String()
     title = fields.String()
     description = fields.String()
@@ -27,9 +27,15 @@ class ArticleSchema(ma.Schema):
     favoritesCount = fields.Integer()
     author = fields.Nested(_UserSchema, only=["username", "bio", "image", "following"])
 
+class ArticleSchema(ma.Schema):
+    article = fields.Nested(_ArticleSchema)
+
 class ArticlesSchema(ma.Schema):
-    articles = fields.Nested(ArticleSchema, many=True)
+    articles = fields.Nested(_ArticleSchema, many=True)
     articlesCount = fields.Function(lambda obj: len(obj.articles))
+
+class TagsSchema(ma.Schema):
+    tags = fields.String(many=True)
 
 
 
@@ -38,3 +44,4 @@ user_schema = UserSchema()
 profile_schema = ProfileSchema()
 article_schema = ArticleSchema()
 articles_schema = ArticlesSchema()
+tags_schema = TagsSchema()

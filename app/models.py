@@ -1,4 +1,4 @@
-from sqlalchemy import Column, DateTime, Integer, Text, func, UniqueConstraint, ForeignKey
+from sqlalchemy import Column, DateTime, Integer, Text, func, UniqueConstraint, ForeignKey, desc
 from sqlalchemy.orm import relationship, backref
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import create_access_token, get_jwt_identity
@@ -17,6 +17,17 @@ class Tag(db.Model):
     name = Column(Text, nullable=False)
     articles = relationship('ArticleTag', backref='tag')
 
+    @classmethod
+    def get_or_create(cls, tag_name):
+        tag = db.session.query(cls).filter_by(name=tag_name).first()
+        if tag:
+            return tag
+
+        new_tag = cls(name=tag_name)
+        db.session.add(new_tag)
+        return new_tag
+
+
 class ArticleTag(db.Model):
     __tablename__ = 'article_tags'
     article_id = Column(Integer, ForeignKey("articles.id"), primary_key=True)
@@ -30,6 +41,37 @@ class Article(db.Model, DatetimeMixin):
     title = Column(Text, nullable=False)
     author_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     tags = relationship('ArticleTag', backref='article')
+
+    @staticmethod
+    def create_slug_from_title(title):
+        return title.replace(' ', '-')
+
+    @classmethod
+    def recent(cls, limit=20, offset=0):
+        return db.session.query(cls).order_by(desc(cls.created_at)).offset(offset).limit(limit).all()
+
+    @classmethod
+    def feed(cls, user, limit=20, offset=0):
+        return []
+
+    @classmethod
+    def find_by_slug(cls, article_slug):
+        return db.session.query(cls).filter_by(slug=article_slug).first_or_404()
+
+    @classmethod
+    def new(cls, article, user):
+        new_article = cls(title=article['title'], description=article['description'], body=article['body'], author_user_id=user.id, slug=cls.create_slug_from_title(article['body']))
+        if 'tagList' in article and len(article['tagList']) > 0:
+            tags = [ Tag.get_or_create(tag_name) for tag_name in article['tagList'] ]
+            new_article.add_tags(tags)
+        return new_article
+
+    def add_tags(self, tags):
+        db.session.add_all([ArticleTag.new(self, tag) for tag in tags])
+
+    def delete(self):
+        db.session.delete(self)
+
 
 
 class Follow(db.Model, DatetimeMixin):
@@ -130,3 +172,9 @@ class User(db.Model, DatetimeMixin):
             followee_user_id=followee_user.id,
             follower_user_id=self.id).first_or_404()
         db.session.delete(follow)
+
+    def create_article(self, article):
+        return Article.new(article, self)
+
+    def find_my_article_by_slug(self, slug):
+        return db.session.query(Article).filter_by(slug=slug, author_user_id=self.id).first_or_404()
