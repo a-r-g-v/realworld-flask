@@ -24,6 +24,10 @@ class Tag(db.Model):
         new_tag = cls(name=tag_name)
         return new_tag
 
+    @classmethod
+    def all(cls):
+        return db.session.query(cls).all()
+
 class Favorite(db.Model, DatetimeMixin):
     __tablename__ = 'favorites'
     user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)

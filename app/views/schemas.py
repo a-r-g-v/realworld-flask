@@ -45,7 +45,7 @@ class ArticlesSchema(ma.Schema):
 
 
 class TagsSchema(ma.Schema):
-    tags = fields.String(many=True)
+    tags = fields.List(fields.String())
 
 
 
