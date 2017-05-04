@@ -17,12 +17,11 @@ itsdangerous==0.24        # via flask
 jinja2==2.9.6             # via flask
 mako==1.0.6               # via alembic
 markupsafe==1.0           # via jinja2, mako
-marshmallow-sqlalchemy==0.13.1
-marshmallow==2.13.5       # via flask-marshmallow, marshmallow-sqlalchemy, webargs
+marshmallow==2.13.5       # via flask-marshmallow, webargs
 pyjwt==1.5.0              # via flask-jwt-extended
 python-editor==1.0.3      # via alembic
 simplekv==0.10.0          # via flask-jwt-extended
 six==1.10.0               # via flask-marshmallow
-sqlalchemy==1.1.9         # via alembic, flask-sqlalchemy, marshmallow-sqlalchemy
-webargs==1.6.0
+sqlalchemy==1.1.9         # via alembic, flask-sqlalchemy
+webargs==1.6.1
 werkzeug==0.12.1          # via flask

@@ -4,5 +4,4 @@ flask-migrate
 flask-jwt-extended
 flask-classful
 flask-marshmallow
-marshmallow-sqlalchemy
 webargs
