@@ -123,25 +123,29 @@ class ArticlesView(FlaskView):
             },
             required=True)
     }
-    @route('<slug>/comments', methods=['GET', 'POST'])
+    @route('<slug>/comments', methods=['GET'])
     @jwt_optional
-    def get_and_post_comment(self, slug):
+    def get_comment(self, slug):
         """
-            Get Comments from an Article And Add Comments to an Article
+            Get Comments from an Article
         """
-        if request.method == 'GET':
-            comments = Comment.all()
-            return comment_schema.jsonify({'comments': comments})
+        article = Article.find_by_slug(slug)
+        comments = article.comments
+        return comments_schema.jsonify({'comments': comments})
 
-        elif request.method == 'POST':
-            args = parser.parse(self.post_comment_args)
-            logged_user = User.get_logged_user()
-            article = Article.find_by_slug(slug)
-            comment = logged_user.create_comment(article, args['comment'])
-            db.session.add(comment)
-            db.session.commit()
-
-            return comment_schema.jsonify({'comment': comment})
+    @route('<slug>/comments', methods=['POST'])
+    @jwt_required
+    def post_comment(self, slug):
+        """
+            Add Comments to an Article
+        """
+        args = parser.parse(self.post_comment_args)
+        logged_user = User.get_logged_user()
+        article = Article.find_by_slug(slug)
+        comment = logged_user.create_comment(article, args['comment'])
+        db.session.add(comment)
+        db.session.commit()
+        return comment_schema.jsonify({'comment': comment})
 
     
     @route('<slug>/comments/<id>', methods=['DELETE'])

@@ -10,10 +10,10 @@ class DatetimeMixin(object):
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
-class Comment(db.Model):
+class Comment(db.Model, DatetimeMixin):
     __tablename__ = 'comments'
-    article_id =  Column(Integer, ForeignKey('articles.id'), primary_key=True)
     no = Column(Integer, primary_key=True, autoincrement=True)
+    article_id =  Column(Integer, ForeignKey('articles.id'), nullable=False)
     body = Column(Text, nullable=False)
     author_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 
