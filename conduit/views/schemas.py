@@ -24,8 +24,8 @@ class _ArticleSchema(ma.Schema):
     body = fields.String()
     createdAt = fields.DateTime(attribute='created_at')
     updatedAt = fields.DateTime(attribute='updated_at')
-    favorited = fields.Boolean()
-    favoritesCount = fields.Integer()
+    favorited = fields.Boolean(default=None)
+    favoritesCount = fields.Integer(default=0)
     tagList = fields.List(fields.String())
     author = fields.Nested(_UserSchema, only=["username", "bio", "image", "following"])
 
@@ -34,7 +34,7 @@ class ArticleSchema(ma.Schema):
 
 class ArticlesSchema(ma.Schema):
     articles = fields.Nested(_ArticleSchema, many=True)
-    articlesCount =  fields.Integer()
+    articlesCount = fields.Integer(default=0)
 
     @pre_dump(pass_many=False)
     def calucate_count(self, data):

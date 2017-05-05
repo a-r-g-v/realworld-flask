@@ -78,4 +78,19 @@ class ArticlesTestCase(BaseTestCase, UserUseCase, ArticlesUseCase):
         get_comments = self.get_comments(article['article']['slug']).json
         assert len(get_comments['comments']) == 0
 
+    def test_favorite(self):
+        new_user = generate_user()
+        user = self.register(new_user).json
+
+        new_article = generate_article()
+        article = self.post_article(user['user']['token'], new_article).json
+        assert 'article' in article
+
+        article = self.favorite_article(user['user']['token'], article['article']['slug']).json
+        assert article['article']['favorited'] is True
+
+        article = self.unfavorite_article(user['user']['token'], article['article']['slug']).json
+        assert article['article']['favorited'] is False
+
+
 
