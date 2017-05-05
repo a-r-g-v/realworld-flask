@@ -4,6 +4,7 @@ import json as _json
 from datetime import timedelta 
 from conduit import create_app
 from conduit.models import db
+from faker import Faker
 
 class TestConfig(object):
     DEBUG = True
@@ -42,6 +43,16 @@ def make_client_kwargs(token=None, json=None):
         result.update({'headers': make_auth_header(token)})
     return result
 
+def generate_user():
+    fake = Faker()
+    profile = fake.simple_profile()
+    return {
+            'user': {
+                'username': profile['username'], 
+                'email': profile['mail'],
+                'password': profile['username']
+                }
+            }
 
 class BaseTestCase(unittest.TestCase):
 

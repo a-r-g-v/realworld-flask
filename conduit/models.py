@@ -162,8 +162,8 @@ class User(db.Model, DatetimeMixin):
     follows = relationship(
         "User",
         secondary="follows",
-        primaryjoin=Follow.followee_user_id == id,
-        secondaryjoin=Follow.follower_user_id == id,
+        primaryjoin=Follow.follower_user_id == id,
+        secondaryjoin=Follow.followee_user_id == id,
         backref="followers")
 
     favorites = relationship(
