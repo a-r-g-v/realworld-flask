@@ -164,7 +164,7 @@ class ArticlesView(FlaskView):
         return comment_schema.jsonify({'comment': comment})
 
     
-    @route('<slug>/comments/<id>', methods=['DELETE'])
+    @route('<slug>/comments/<comment_id>', methods=['DELETE'])
     @jwt_required
     def delete_comment(self, slug, comment_id):
         """

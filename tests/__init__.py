@@ -35,12 +35,15 @@ def make_response_class(response_class):
 def make_auth_header(token):
     return {"Authorization": "{type} {token}".format(type=TestConfig.JWT_HEADER_TYPE, token=token)}
 
-def make_client_kwargs(token=None, json=None):
+def make_client_kwargs(token=None, json=None, query_string=None):
     result = {}
     if json:
         result.update({'data': _json.dumps(json), 'content_type': 'application/json'})
     if token:
         result.update({'headers': make_auth_header(token)})
+    if query_string:
+        result.update({'query_string': query_string})
+
     return result
 
 def generate_user():
@@ -53,6 +56,26 @@ def generate_user():
                 'password': profile['username']
                 }
             }
+
+def generate_article():
+    fake = Faker()
+    return {
+            'article': {
+                'title': fake.sentence(nb_words=4),
+                'description': fake.sentence(nb_words=12),
+                'body': fake.paragraph(nb_sentences=6),
+                'tagList': fake.words(nb=4)
+                }
+            }
+
+def generate_comment():
+    fake = Faker()
+    return {
+            'comment': {
+                'body': fake.paragraph(nb_sentences=6)
+                }
+            }
+
 
 class BaseTestCase(unittest.TestCase):
 

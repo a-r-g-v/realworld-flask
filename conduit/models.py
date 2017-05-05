@@ -12,7 +12,7 @@ class DatetimeMixin(object):
 
 class Comment(db.Model, DatetimeMixin):
     __tablename__ = 'comments'
-    no = Column(Integer, primary_key=True, autoincrement=True)
+    id = Column(Integer, primary_key=True, autoincrement=True)
     article_id =  Column(Integer, ForeignKey('articles.id'), nullable=False)
     body = Column(Text, nullable=False)
     author_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
@@ -134,6 +134,8 @@ class Article(db.Model, DatetimeMixin):
     def update(self, args):
         article = args['article']
         for k,v in article.items():
+            if k == 'title':
+                self.slug = self.create_slug_from_title(v)
             setattr(self, k, v)
 
 
@@ -256,7 +258,6 @@ class User(db.Model, DatetimeMixin):
 
     def find_my_article_by_slug(self, slug):
         return db.session.query(Article).filter_by(slug=slug, author_user_id=self.id).first_or_404()
-
     def find_my_comment_by_id(self, comment_id):
         return db.session.query(Comment).filter_by(id=comment_id, author_user_id=self.id).first_or_404()
 
