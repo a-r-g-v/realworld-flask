@@ -11,6 +11,13 @@ class _UserSchema(ma.Schema):
     image = fields.URL()
     following = fields.Boolean(default=None)
 
+    @pre_dump(pass_many=False)
+    def fill_following(self, data):
+        logged_user = User.get_logged_user(raise_exceptipn=False)
+        if logged_user:
+            data.following = data.is_following_by(logged_user)
+        return data
+
 class UserSchema(ma.Schema):
     user = fields.Nested(_UserSchema, only=["email", "token", "username", "bio", "image"])
 
@@ -28,6 +35,13 @@ class _ArticleSchema(ma.Schema):
     favoritesCount = fields.Integer(default=0)
     tagList = fields.List(fields.String())
     author = fields.Nested(_UserSchema, only=["username", "bio", "image", "following"])
+
+    @pre_dump(pass_many=False)
+    def fill_favorited(self, data):
+        logged_user = User.get_logged_user(raise_exceptipn=False)
+        if logged_user:
+            data.favorited = data.is_favorited_by(logged_user)
+        return data
 
 class ArticleSchema(ma.Schema):
     article = fields.Nested(_ArticleSchema)

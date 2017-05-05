@@ -50,9 +50,6 @@ class ArticlesView(FlaskView):
             Get Article
         """
         article = Article.find_by_slug(slug)
-        logged_user = User.get_logged_user(raise_exceptipn=False)
-        if logged_user:
-            article.favorited = article.is_favorited_by(logged_user)
         return article_schema.jsonify({'article': article})
 
     create_article_args = {

@@ -23,9 +23,6 @@ class ProfilesView(FlaskView):
 i           Get Profile
         """
         user = User.find_by_username(username)
-        logged_user = User.get_logged_user(raise_exceptipn=False)
-        if logged_user:
-            user.following = user.is_following_by(logged_user)
         return profile_schema.jsonify({'profile': user})
 
     @route('<username>/follow', methods=['POST', 'DELETE'])
@@ -40,7 +37,7 @@ i           Get Profile
             logged_user.follow(user)
 
         elif request.method == 'DELETE':
-            logged_user.unfollow(user)
+           logged_user.unfollow(user)
 
         try:
             db.session.commit()
