@@ -1,5 +1,5 @@
 from .. import ma
-from app.models import User, Article
+from ..models import User, Article
 from marshmallow import fields, pre_dump
 
 
@@ -10,6 +10,13 @@ class _UserSchema(ma.Schema):
     bio =  fields.String()
     image = fields.URL()
     following = fields.Boolean(default=None)
+
+    @pre_dump(pass_many=False)
+    def fill_following(self, data):
+        logged_user = User.get_logged_user(raise_exceptipn=False)
+        if logged_user:
+            data.following = data.is_following_by(logged_user)
+        return data
 
 class UserSchema(ma.Schema):
     user = fields.Nested(_UserSchema, only=["email", "token", "username", "bio", "image"])
@@ -24,17 +31,24 @@ class _ArticleSchema(ma.Schema):
     body = fields.String()
     createdAt = fields.DateTime(attribute='created_at')
     updatedAt = fields.DateTime(attribute='updated_at')
-    favorited = fields.Boolean()
-    favoritesCount = fields.Integer()
+    favorited = fields.Boolean(default=None)
+    favoritesCount = fields.Integer(default=0)
     tagList = fields.List(fields.String())
     author = fields.Nested(_UserSchema, only=["username", "bio", "image", "following"])
+
+    @pre_dump(pass_many=False)
+    def fill_favorited(self, data):
+        logged_user = User.get_logged_user(raise_exceptipn=False)
+        if logged_user:
+            data.favorited = data.is_favorited_by(logged_user)
+        return data
 
 class ArticleSchema(ma.Schema):
     article = fields.Nested(_ArticleSchema)
 
 class ArticlesSchema(ma.Schema):
     articles = fields.Nested(_ArticleSchema, many=True)
-    articlesCount =  fields.Integer()
+    articlesCount = fields.Integer(default=0)
 
     @pre_dump(pass_many=False)
     def calucate_count(self, data):

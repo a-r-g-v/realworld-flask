@@ -5,10 +5,10 @@ from flask_classful import FlaskView, route
 from webargs import fields
 from webargs.flaskparser import parser
 
-from app.models import Article, db, User
+from ..models import Article, db, User
 from . import api
 from .schemas import article_schema, articles_schema, comment_schema, comments_schema
-from app.utils import jwt_optional
+from ..utils import jwt_optional
 
 class ArticlesView(FlaskView):
 
@@ -50,9 +50,6 @@ class ArticlesView(FlaskView):
             Get Article
         """
         article = Article.find_by_slug(slug)
-        logged_user = User.get_logged_user(raise_exceptipn=False)
-        if logged_user:
-            article.favorited = article.is_favorited_by(logged_user)
         return article_schema.jsonify({'article': article})
 
     create_article_args = {
@@ -164,7 +161,7 @@ class ArticlesView(FlaskView):
         return comment_schema.jsonify({'comment': comment})
 
     
-    @route('<slug>/comments/<id>', methods=['DELETE'])
+    @route('<slug>/comments/<comment_id>', methods=['DELETE'])
     @jwt_required
     def delete_comment(self, slug, comment_id):
         """

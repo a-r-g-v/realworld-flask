@@ -5,7 +5,7 @@ from flask.cli import FlaskGroup
 
 
 def create_app(_=None):
-    from app import create_app as _create_app
+    from conduit import create_app as _create_app
     base_path = os.path.abspath(os.path.dirname(__file__))
     config_path = os.path.join(base_path, 'config.cfg')
     return _create_app(os.environ.get('APP_CONFIG', config_path))

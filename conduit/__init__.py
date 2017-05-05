@@ -3,7 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 from flask_jwt_extended import JWTManager
 from flask_marshmallow import Marshmallow
-from app.errors import Errors
+from .errors import Errors
 
 migrate = Migrate()
 jwt = JWTManager()
@@ -11,9 +11,14 @@ errors = Errors()
 ma = Marshmallow()
 
 
-def create_app(config_filename):
+def create_app(config_filename=None, config_object=None):
     app = Flask(__name__)
-    app.config.from_pyfile(config_filename)
+
+    if config_filename:
+        app.config.from_pyfile(config_filename)
+
+    if config_object:
+        app.config.from_object(config_object)
 
     from .models import db
 
