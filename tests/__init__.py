@@ -28,7 +28,7 @@ class JSONResponseMixin(object):
     @property
     def json(self):
         if self.content_type in ['application/json', 'text/javascript']:
-            return _json.loads(self.data)
+            return _json.loads(self.data.decode('utf-8'))
 
 
 def make_response_class(response_class):
