@@ -11,9 +11,14 @@ errors = Errors()
 ma = Marshmallow()
 
 
-def create_app(config_filename):
+def create_app(config_filename=None, config_object=None):
     app = Flask(__name__)
-    app.config.from_pyfile(config_filename)
+
+    if config_filename:
+        app.config.from_pyfile(config_filename)
+
+    if config_object:
+        app.config.from_object(config_object)
 
     from .models import db
 
