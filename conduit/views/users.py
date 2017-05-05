@@ -4,7 +4,7 @@ from flask_classful import FlaskView, route
 from webargs import fields
 from webargs.flaskparser import parser
 
-from app.models import User, db
+from ..models import User, db
 from . import api
 from .schemas import user_schema
 

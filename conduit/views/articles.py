@@ -5,10 +5,10 @@ from flask_classful import FlaskView, route
 from webargs import fields
 from webargs.flaskparser import parser
 
-from app.models import Article, db, User
+from ..models import Article, db, User
 from . import api
 from .schemas import article_schema, articles_schema, comment_schema, comments_schema
-from app.utils import jwt_optional
+from ..utils import jwt_optional
 
 class ArticlesView(FlaskView):
 

@@ -8,11 +8,11 @@ from webargs import fields
 from webargs.flaskparser import parser
 
 
-from app.models import User, db
+from ..models import User, db
 from . import api
 from .. import ma
 from .schemas import profile_schema
-from app.utils import jwt_optional
+from ..utils import jwt_optional
 
 
 class ProfilesView(FlaskView):

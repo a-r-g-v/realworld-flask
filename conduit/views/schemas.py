@@ -1,5 +1,5 @@
 from .. import ma
-from app.models import User, Article
+from ..models import User, Article
 from marshmallow import fields, pre_dump
 
 
