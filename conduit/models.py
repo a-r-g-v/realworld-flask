@@ -132,8 +132,9 @@ class Article(db.Model, DatetimeMixin):
         return db.session.query(Favorite).filter_by(article_id=self.id, user_id=user.id).count() != 0
 
     def update(self, args):
-        user = args['article']
-        self.__dict__.update(user)
+        article = args['article']
+        for k,v in article.items():
+            setattr(self, k, v)
 
 
 
@@ -224,7 +225,8 @@ class User(db.Model, DatetimeMixin):
 
     def update(self, args):
         user = args['user']
-        self.__dict__.update(user)
+        for k,v in user.items():
+            setattr(self, k, v)
 
     @classmethod
     def find_by_username(cls, username):

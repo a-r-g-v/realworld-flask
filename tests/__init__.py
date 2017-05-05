@@ -1,6 +1,6 @@
 import unittest
 import os
-import json
+import json as _json
 from datetime import timedelta 
 from conduit import create_app
 from conduit.models import db
@@ -24,7 +24,7 @@ class JSONResponseMixin(object):
     @property
     def json(self):
         if self.content_type in ['application/json', 'text/javascript']:
-            return json.loads(self.data)
+            return _json.loads(self.data)
 
 def make_response_class(response_class):
     class ResponseClass(response_class, JSONResponseMixin):
@@ -33,6 +33,15 @@ def make_response_class(response_class):
 
 def make_auth_header(token):
     return {"Authorization": "{type} {token}".format(type=TestConfig.JWT_HEADER_TYPE, token=token)}
+
+def make_client_kwargs(token=None, json=None):
+    result = {}
+    if json:
+        result.update({'data': _json.dumps(json), 'content_type': 'application/json'})
+    if token:
+        result.update({'headers': make_auth_header(token)})
+    return result
+
 
 class BaseTestCase(unittest.TestCase):
 
