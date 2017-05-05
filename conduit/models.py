@@ -95,9 +95,9 @@ class Article(db.Model, DatetimeMixin):
 
         if author:
             authors = aliased(User)
+            # pylint: disable=no-member
             query = query.join(authors, cls.author).filter(
-                authors.username == author)
-
+                    authors.username == author) 
         if favorited:
             favorites = aliased(User)
             query = query.join(Favorite, Favorite.article_id == cls.id).\
@@ -106,10 +106,6 @@ class Article(db.Model, DatetimeMixin):
 
         return query.order_by(
             desc(cls.created_at)).offset(offset).limit(limit).all()
-
-    @classmethod
-    def feed(cls, user, limit=20, offset=0):
-        return []
 
     @classmethod
     def find_by_slug(cls, article_slug):

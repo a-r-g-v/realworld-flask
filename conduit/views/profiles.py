@@ -1,15 +1,11 @@
 from flask import request
-from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_jwt_extended import jwt_required
 from flask_classful import FlaskView, route
 
 from sqlalchemy.exc import IntegrityError
 
-from webargs import fields
-from webargs.flaskparser import parser
-
 from ..models import User, db
 from . import api
-from .. import ma
 from .schemas import profile_schema
 from ..utils import jwt_optional
 
@@ -18,7 +14,7 @@ class ProfilesView(FlaskView):
     @jwt_optional
     def index(self, username):
         """
-i           Get Profile
+            Get Profile
         """
         user = User.find_by_username(username)
         return profile_schema.jsonify({'profile': user})

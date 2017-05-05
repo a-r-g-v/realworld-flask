@@ -1,5 +1,4 @@
 from functools import wraps
-from flask import current_app
 from flask_jwt_extended.view_decorators import _decode_jwt_from_request
 from flask_jwt_extended.exceptions import JWTExtendedException
 

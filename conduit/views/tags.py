@@ -1,10 +1,5 @@
-from flask_jwt_extended import jwt_required
-from flask_classful import FlaskView, route
-
-from webargs import fields
-from webargs.flaskparser import parser
-
-from ..models import Tag, db
+from flask_classful import FlaskView
+from ..models import Tag
 from . import api
 from .schemas import tags_schema
 
