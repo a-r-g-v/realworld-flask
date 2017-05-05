@@ -7,7 +7,6 @@ from sqlalchemy.exc import IntegrityError
 from webargs import fields
 from webargs.flaskparser import parser
 
-
 from ..models import User, db
 from . import api
 from .. import ma
@@ -16,7 +15,6 @@ from ..utils import jwt_optional
 
 
 class ProfilesView(FlaskView):
-
     @jwt_optional
     def index(self, username):
         """
@@ -37,7 +35,7 @@ i           Get Profile
             logged_user.follow(user)
 
         elif request.method == 'DELETE':
-           logged_user.unfollow(user)
+            logged_user.unfollow(user)
 
         try:
             db.session.commit()
@@ -46,7 +44,7 @@ i           Get Profile
             # SQLAlchemy raise IntegrityError.
             # I should ignore this exception this time.
             db.session.rollback()
-    
+
         return self.index(username)
 
 

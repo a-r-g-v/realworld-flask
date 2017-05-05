@@ -2,20 +2,25 @@ from . import BaseTestCase, make_client_kwargs, generate_user
 from .test_users import UserUseCase
 from flask import url_for
 
-class ProfilesUseCase(object):
 
+class ProfilesUseCase(object):
     def get_profile(self, username, token=None):
-        return self.client.get(url_for('api.ProfilesView:index', username=username), **make_client_kwargs(token=token))
+        return self.client.get(
+            url_for('api.ProfilesView:index', username=username),
+            **make_client_kwargs(token=token))
 
     def follow_user(self, username, token):
-        return self.client.post(url_for('api.ProfilesView:follow', username=username), **make_client_kwargs(token=token))
+        return self.client.post(
+            url_for('api.ProfilesView:follow', username=username),
+            **make_client_kwargs(token=token))
 
     def unfollow_user(self, username, token):
-        return self.client.delete(url_for('api.ProfilesView:follow', username=username), **make_client_kwargs(token=token))
+        return self.client.delete(
+            url_for('api.ProfilesView:follow', username=username),
+            **make_client_kwargs(token=token))
 
 
 class ProfilesTestCase(BaseTestCase, UserUseCase, ProfilesUseCase):
-
     def test_get_profile(self):
         new_user = generate_user()
         assert 'user' in self.register(new_user).json
@@ -31,8 +36,10 @@ class ProfilesTestCase(BaseTestCase, UserUseCase, ProfilesUseCase):
         follower = generate_user()
         follower_user = self.register(follower).json
 
-        profile = self.follow_user(followee_user['user']['username'], follower_user['user']['token']).json
+        profile = self.follow_user(followee_user['user']['username'],
+                                   follower_user['user']['token']).json
         assert profile['profile']['following'] is True
 
-        profile = self.unfollow_user(followee_user['user']['username'], follower_user['user']['token']).json
+        profile = self.unfollow_user(followee_user['user']['username'],
+                                     follower_user['user']['token']).json
         assert profile['profile']['following'] is False

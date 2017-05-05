@@ -9,7 +9,6 @@ from . import api
 from .schemas import user_schema
 
 
-
 class UsersView(FlaskView):
 
     login_args = {

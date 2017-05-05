@@ -10,14 +10,15 @@ from . import api
 from .schemas import article_schema, articles_schema, comment_schema, comments_schema
 from ..utils import jwt_optional
 
+
 class ArticlesView(FlaskView):
 
     index_article_args = {
-                'tag': fields.Str(),
-                'author': fields.Str(),
-                'favorited': fields.Str(),
-                'limit': fields.Integer(),
-                'offset': fields.Integer()
+        'tag': fields.Str(),
+        'author': fields.Str(),
+        'favorited': fields.Str(),
+        'limit': fields.Integer(),
+        'offset': fields.Integer()
     }
 
     @jwt_optional
@@ -29,10 +30,7 @@ class ArticlesView(FlaskView):
         articles = Article.recent(**args)
         return articles_schema.jsonify({'articles': articles})
 
-    feed_article_args = {
-                'limit': fields.Integer(),
-                'offset': fields.Integer()
-    }
+    feed_article_args = {'limit': fields.Integer(), 'offset': fields.Integer()}
 
     @jwt_required
     def feed(self):
@@ -86,6 +84,7 @@ class ArticlesView(FlaskView):
             },
             required=True)
     }
+
     @jwt_required
     def put(self, slug):
         """
@@ -127,15 +126,13 @@ class ArticlesView(FlaskView):
         db.session.commit()
         return self.get(slug)
 
-
     post_comment_args = {
         'comment':
-        fields.Nested(
-            {
-                'body': fields.Str(required=True)
-            },
-            required=True)
+        fields.Nested({
+            'body': fields.Str(required=True)
+        }, required=True)
     }
+
     @route('<slug>/comments', methods=['GET'])
     @jwt_optional
     def get_comment(self, slug):
@@ -160,7 +157,6 @@ class ArticlesView(FlaskView):
         db.session.commit()
         return comment_schema.jsonify({'comment': comment})
 
-    
     @route('<slug>/comments/<comment_id>', methods=['DELETE'])
     @jwt_required
     def delete_comment(self, slug, comment_id):

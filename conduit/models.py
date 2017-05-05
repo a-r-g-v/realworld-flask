@@ -6,14 +6,16 @@ from .exceptions import Unauthorized, Forbidden
 
 db = SQLAlchemy()
 
+
 class DatetimeMixin(object):
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
+
 class Comment(db.Model, DatetimeMixin):
     __tablename__ = 'comments'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    article_id =  Column(Integer, ForeignKey('articles.id'), nullable=False)
+    article_id = Column(Integer, ForeignKey('articles.id'), nullable=False)
     body = Column(Text, nullable=False)
     author_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
 
@@ -22,8 +24,11 @@ class Comment(db.Model, DatetimeMixin):
 
     @classmethod
     def new(cls, article, comment, author):
-        return cls(article_id=article.id, body=comment['body'], author_user_id=author.id)
-    
+        return cls(
+            article_id=article.id,
+            body=comment['body'],
+            author_user_id=author.id)
+
     @classmethod
     def all(cls):
         return db.session.query(cls).all()
@@ -47,15 +52,18 @@ class Tag(db.Model):
     def all(cls):
         return db.session.query(cls).all()
 
+
 class Favorite(db.Model, DatetimeMixin):
     __tablename__ = 'favorites'
     user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
     article_id = Column(Integer, ForeignKey("articles.id"), primary_key=True)
 
+
 class ArticleTag(db.Model, DatetimeMixin):
     __tablename__ = 'article_tags'
     article_id = Column(Integer, ForeignKey("articles.id"), primary_key=True)
     tag_id = Column(Integer, ForeignKey("tags.id"), primary_key=True)
+
 
 class Article(db.Model, DatetimeMixin):
     __tablename__ = 'articles'
@@ -67,11 +75,11 @@ class Article(db.Model, DatetimeMixin):
     author_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
     comments = relationship('Comment', backref='article')
     tags = relationship(
-            'Tag', 
-            secondary="article_tags",
-            primaryjoin= ArticleTag.article_id  == id,
-            secondaryjoin=ArticleTag.tag_id == Tag.id,
-            backref='article')
+        'Tag',
+        secondary="article_tags",
+        primaryjoin=ArticleTag.article_id == id,
+        secondaryjoin=ArticleTag.tag_id == Tag.id,
+        backref='article')
 
     @staticmethod
     def create_slug_from_title(title):
@@ -83,19 +91,21 @@ class Article(db.Model, DatetimeMixin):
 
         if tag:
             tags = aliased(Tag)
-            query = query.join(tags, cls.tags).filter(tags.name==tag)
+            query = query.join(tags, cls.tags).filter(tags.name == tag)
 
         if author:
             authors = aliased(User)
-            query = query.join(authors, cls.author).filter(authors.username==author)
+            query = query.join(authors, cls.author).filter(
+                authors.username == author)
 
         if favorited:
             favorites = aliased(User)
             query = query.join(Favorite, Favorite.article_id == cls.id).\
                     join(favorites, Favorite.user_id == favorites.id ).\
                     filter(favorites.username==favorited)
-    
-        return query.order_by(desc(cls.created_at)).offset(offset).limit(limit).all()
+
+        return query.order_by(
+            desc(cls.created_at)).offset(offset).limit(limit).all()
 
     @classmethod
     def feed(cls, user, limit=20, offset=0):
@@ -103,18 +113,24 @@ class Article(db.Model, DatetimeMixin):
 
     @classmethod
     def find_by_slug(cls, article_slug):
-        return db.session.query(cls).filter_by(slug=article_slug).first_or_404()
+        return db.session.query(cls).filter_by(
+            slug=article_slug).first_or_404()
 
     @classmethod
     def new(cls, article, user):
-        new_article = cls(title=article['title'], description=article['description'], body=article['body'], author_user_id=user.id, slug=cls.create_slug_from_title(article['title']))
+        new_article = cls(
+            title=article['title'],
+            description=article['description'],
+            body=article['body'],
+            author_user_id=user.id,
+            slug=cls.create_slug_from_title(article['title']))
         if 'tagList' in article:
             new_article.add_tags(article['tagList'])
         return new_article
 
     def add_tags(self, tag_list):
         for tag_name in tag_list:
-          self.tags.append(Tag.get_or_create(tag_name))
+            self.tags.append(Tag.get_or_create(tag_name))
 
     @property
     def tagList(self):
@@ -124,23 +140,19 @@ class Article(db.Model, DatetimeMixin):
     def favoritesCount(self):
         return len(self.favorited_users)
 
-
     def delete(self):
         db.session.delete(self)
 
     def is_favorited_by(self, user):
-        return db.session.query(Favorite).filter_by(article_id=self.id, user_id=user.id).count() != 0
+        return db.session.query(Favorite).filter_by(
+            article_id=self.id, user_id=user.id).count() != 0
 
     def update(self, args):
         article = args['article']
-        for k,v in article.items():
+        for k, v in article.items():
             if k == 'title':
                 self.slug = self.create_slug_from_title(v)
             setattr(self, k, v)
-
-
-
-
 
 
 class Follow(db.Model, DatetimeMixin):
@@ -169,14 +181,16 @@ class User(db.Model, DatetimeMixin):
         backref="followers")
 
     favorites = relationship(
-            "Article",
-            secondary="favorites",
-            primaryjoin=Favorite.user_id == id,
-            secondaryjoin=Favorite.article_id == Article.id,
-            backref="favorited_users")
+        "Article",
+        secondary="favorites",
+        primaryjoin=Favorite.user_id == id,
+        secondaryjoin=Favorite.article_id == Article.id,
+        backref="favorited_users")
 
-    articles = relationship("Article", backref=backref("author", uselist=False))
-    comments = relationship("Comment", backref=backref("author", uselist=False))
+    articles = relationship(
+        "Article", backref=backref("author", uselist=False))
+    comments = relationship(
+        "Comment", backref=backref("author", uselist=False))
 
     @classmethod
     def get_logged_user(cls, raise_exceptipn=True):
@@ -227,7 +241,7 @@ class User(db.Model, DatetimeMixin):
 
     def update(self, args):
         user = args['user']
-        for k,v in user.items():
+        for k, v in user.items():
             setattr(self, k, v)
 
     @classmethod
@@ -257,9 +271,12 @@ class User(db.Model, DatetimeMixin):
         return Comment.new(article, comment, self)
 
     def find_my_article_by_slug(self, slug):
-        return db.session.query(Article).filter_by(slug=slug, author_user_id=self.id).first_or_404()
+        return db.session.query(Article).filter_by(
+            slug=slug, author_user_id=self.id).first_or_404()
+
     def find_my_comment_by_id(self, comment_id):
-        return db.session.query(Comment).filter_by(id=comment_id, author_user_id=self.id).first_or_404()
+        return db.session.query(Comment).filter_by(
+            id=comment_id, author_user_id=self.id).first_or_404()
 
     def favorite_article(self, article):
         self.favorites.append(article)
