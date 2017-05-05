@@ -9,6 +9,9 @@ class ArticlesUseCase(object):
             url_for('api.ArticlesView:index'), **make_client_kwargs(
                 query_string=kwargs, token=token))
 
+    def list_tags(self):
+        return self.client.get(url_for('api.TagsView:index'))
+
     def feed_articles(self, token, **kwargs):
         return self.client.get(
             url_for('api.ArticlesView:feed'), **make_client_kwargs(
@@ -126,3 +129,14 @@ class ArticlesTestCase(BaseTestCase, UserUseCase, ArticlesUseCase):
         article = self.unfavorite_article(user['user']['token'],
                                           article['article']['slug']).json
         assert article['article']['favorited'] is False
+
+    def test_tags(self):
+        new_user = generate_user()
+        user = self.register(new_user).json
+
+        new_article = generate_article()
+        article = self.post_article(user['user']['token'], new_article).json
+        assert 'article' in article
+
+        tags = self.list_tags().json
+        assert article['article']['tagList'] == tags['tags']

@@ -159,7 +159,7 @@ class ArticlesView(FlaskView):
 
     @route('<slug>/comments/<comment_id>', methods=['DELETE'])
     @jwt_required
-    def delete_comment(self, _, comment_id):
+    def delete_comment(self, slug, comment_id):
         """
             Delete Comment
         """

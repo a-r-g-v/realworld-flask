@@ -97,7 +97,7 @@ class Article(db.Model, DatetimeMixin):
             authors = aliased(User)
             # pylint: disable=no-member
             query = query.join(authors, cls.author).filter(
-                    authors.username == author) 
+                authors.username == author)
         if favorited:
             favorites = aliased(User)
             query = query.join(Favorite, Favorite.article_id == cls.id).\
