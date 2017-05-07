@@ -163,6 +163,7 @@ class ArticlesView(FlaskView):
         """
             Delete Comment
         """
+        # pylint: disable=unused-argument
         logged_user = User.get_logged_user()
         comment = logged_user.find_my_comment_by_id(comment_id)
         comment.delete()
