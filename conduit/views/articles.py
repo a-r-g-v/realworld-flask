@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, jsonify
 from flask_jwt_extended import jwt_required
 from flask_classful import FlaskView, route
 
@@ -107,7 +107,7 @@ class ArticlesView(FlaskView):
         article = user.find_my_article_by_slug(slug)
         article.delete()
         db.session.commit()
-        return '', 200
+        return jsonify(), 200
 
     @route('<slug>/favorite', methods=['POST', 'DELETE'])
     @jwt_required
@@ -167,7 +167,7 @@ class ArticlesView(FlaskView):
         comment = logged_user.find_my_comment_by_id(comment_id)
         comment.delete()
         db.session.commit()
-        return '', 200
+        return jsonify(), 200
 
 
 ArticlesView.register(api, trailing_slash=False)
