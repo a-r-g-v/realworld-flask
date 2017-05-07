@@ -68,10 +68,10 @@ class UserView(FlaskView):
                 'username': fields.Str(),
                 'email': fields.Str(),
                 'password': fields.Str(),
-                'image': fields.Str(),
-                'bio': fields.Str()
+                'image': fields.Str(allow_none=True),
+                'bio': fields.Str(allow_none=True)
             },
-            required=True)
+            required=True, allow_missing=True)
     }
 
     def put(self):
