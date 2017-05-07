@@ -3,6 +3,7 @@ from sqlalchemy.orm import relationship, backref, aliased
 from flask_sqlalchemy import SQLAlchemy
 from flask_jwt_extended import create_access_token, get_jwt_identity
 from .exceptions import Unauthorized, Forbidden
+from . import bcrypt
 
 db = SQLAlchemy()
 
@@ -165,7 +166,7 @@ class User(db.Model, DatetimeMixin):
         "email", "password", name="unique_username_email"), )
     id = Column(Integer, primary_key=True, autoincrement=True)
     username = Column(Text, nullable=False)
-    email = Column(Text, nullable=False)
+    email = Column(Text, nullable=False, unique=True)
     password = Column(Text, nullable=False)
     image = Column(Text)
     bio = Column(Text)
@@ -204,27 +205,27 @@ class User(db.Model, DatetimeMixin):
         return user
 
     @classmethod
-    def check_already_exist_user(cls, email, password):
-        if db.session.query(cls).filter_by(
-                email=email, password=password).count():
+    def check_already_exist_user(cls, email):
+        if db.session.query(cls).filter_by(email=email).count():
             raise Forbidden
 
     @classmethod
     def new(cls, args):
         user = args['user']
-        cls.check_already_exist_user(user['email'], user['password'])
+        cls.check_already_exist_user(user['email'])
+        hashed_password = bcrypt.generate_password_hash(user['password'])
         user = cls(
             username=user['username'],
             email=user['email'],
-            password=user['password'])
+            password=hashed_password)
 
         return user
 
     @classmethod
     def authenticate(cls, email, password):
         user = db.session.query(cls).filter_by(
-            email=email, password=password).first()
-        if not user:
+            email=email).first()
+        if not user or not bcrypt.check_password_hash(user.password, password):
             raise Unauthorized
         return user
 
