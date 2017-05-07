@@ -73,7 +73,7 @@ class Article(db.Model, DatetimeMixin):
     slug = Column(Text, nullable=False, unique=True)
     title = Column(Text, nullable=False)
     author_user_id = Column(Integer, ForeignKey('users.id'), nullable=False)
-    comments = relationship('Comment', backref='article')
+    comments = relationship('Comment', backref='article', cascade='all, delete-orphan')
     tags = relationship(
         'Tag',
         secondary="article_tags",
@@ -184,9 +184,9 @@ class User(db.Model, DatetimeMixin):
         backref="favorited_users")
 
     articles = relationship(
-        "Article", backref=backref("author", uselist=False))
+        "Article", backref=backref("author", uselist=False), cascade='all, delete-orphan')
     comments = relationship(
-        "Comment", backref=backref("author", uselist=False))
+        "Comment", backref=backref("author", uselist=False), cascade='all, delete-orphan')
 
     @classmethod
     def get_logged_user(cls, raise_exceptipn=True):
