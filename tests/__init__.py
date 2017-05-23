@@ -1,5 +1,4 @@
 import unittest
-import os
 import json as _json
 from datetime import timedelta
 from conduit import create_app
